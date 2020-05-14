@@ -141,7 +141,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;StartButton.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>5</value>
   </data>
   <data name="StopButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>12, 72</value>
@@ -165,7 +165,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;StopButton.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>4</value>
   </data>
   <data name="ThreadList.Location" type="System.Drawing.Point, System.Drawing">
     <value>337, 43</value>
@@ -186,7 +186,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;ThreadList.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="threadCountField.Location" type="System.Drawing.Point, System.Drawing">
     <value>145, 43</value>
@@ -207,6 +207,51 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;threadCountField.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="sendButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>157, 143</value>
+  </data>
+  <data name="sendButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 23</value>
+  </data>
+  <data name="sendButton.TabIndex" type="System.Int32, mscorlib">
+    <value>4</value>
+  </data>
+  <data name="sendButton.Text" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="&gt;&gt;sendButton.Name" xml:space="preserve">
+    <value>sendButton</value>
+  </data>
+  <data name="&gt;&gt;sendButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;sendButton.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;sendButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="threadTextBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>145, 117</value>
+  </data>
+  <data name="threadTextBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>100, 20</value>
+  </data>
+  <data name="threadTextBox.TabIndex" type="System.Int32, mscorlib">
+    <value>5</value>
+  </data>
+  <data name="&gt;&gt;threadTextBox.Name" xml:space="preserve">
+    <value>threadTextBox</value>
+  </data>
+  <data name="&gt;&gt;threadTextBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;threadTextBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;threadTextBox.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">

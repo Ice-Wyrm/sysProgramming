@@ -33,6 +33,8 @@
             this.StopButton = new System.Windows.Forms.Button();
             this.ThreadList = new System.Windows.Forms.ListBox();
             this.threadCountField = new System.Windows.Forms.NumericUpDown();
+            this.sendButton = new System.Windows.Forms.Button();
+            this.threadTextBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.threadCountField)).BeginInit();
             this.SuspendLayout();
             // 
@@ -61,10 +63,23 @@
             resources.ApplyResources(this.threadCountField, "threadCountField");
             this.threadCountField.Name = "threadCountField";
             // 
+            // sendButton
+            // 
+            resources.ApplyResources(this.sendButton, "sendButton");
+            this.sendButton.Name = "sendButton";
+            this.sendButton.UseVisualStyleBackColor = true;
+            // 
+            // threadTextBox
+            // 
+            resources.ApplyResources(this.threadTextBox, "threadTextBox");
+            this.threadTextBox.Name = "threadTextBox";
+            // 
             // Form1
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.threadTextBox);
+            this.Controls.Add(this.sendButton);
             this.Controls.Add(this.threadCountField);
             this.Controls.Add(this.ThreadList);
             this.Controls.Add(this.StopButton);
@@ -73,6 +88,7 @@
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             ((System.ComponentModel.ISupportInitialize)(this.threadCountField)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -82,6 +98,8 @@
         private System.Windows.Forms.Button StopButton;
         private System.Windows.Forms.ListBox ThreadList;
         private System.Windows.Forms.NumericUpDown threadCountField;
+        private System.Windows.Forms.Button sendButton;
+        private System.Windows.Forms.TextBox threadTextBox;
     }
 }
 
