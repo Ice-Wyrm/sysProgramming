@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace L1Sharp
 {
@@ -19,6 +20,11 @@ namespace L1Sharp
         EventWaitHandle eventStart = new EventWaitHandle(false, EventResetMode.AutoReset, "eventStart");
         EventWaitHandle eventConfirm = new EventWaitHandle(false, EventResetMode.ManualReset, "eventConfirm");
         EventWaitHandle eventQuit = new EventWaitHandle(false, EventResetMode.AutoReset, "eventQuit");
+        EventWaitHandle eventMessageSent = new EventWaitHandle(false, EventResetMode.AutoReset, "eventMessageSent");
+
+        [DllImport("TransportDll.dll")]
+        private static extern void sendTextToMMF(string Str, int thread);
+
         int k;
 
         public Form1()
@@ -84,5 +90,20 @@ namespace L1Sharp
                 ChildProcess.Close();
             }
         }
+
+        private void sendButton_Click(object sender, EventArgs e)
+        {
+            if (threadTextBox.Text.Length == 0)
+            {
+                return;
+            }
+
+            string sb = threadTextBox.Text;
+            int threadNum = ThreadList.SelectedIndex;
+            sendTextToMMF(sb, threadNum);
+            eventMessageSent.Set();
+            eventConfirm.WaitOne();
+        }
+             
     }
 }

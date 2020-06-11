@@ -5,6 +5,7 @@
 #include "framework.h"
 #include "L1.h"
 #include <vector>
+#include "TransportDll/dllmain.h"
 
 using namespace std;
 
@@ -19,12 +20,14 @@ HANDLE hEventStop;
 HANDLE hEventStart;
 HANDLE hEventConfirm;
 HANDLE hEventQuit;
+HANDLE hEventMessageSent;
+HANDLE mFile;
 
 DWORD hSignal;
 
+
 vector<HANDLE> hEvents;
 vector<HANDLE> hThreads;
-
 
 DWORD WINAPI newThread(LPVOID lpParameter)
 {
@@ -34,7 +37,23 @@ DWORD WINAPI newThread(LPVOID lpParameter)
 	ReleaseMutex(hMutex);
 	SetEvent(hEventConfirm);
 
-	
+	WaitForSingleObject(hEvents[ID], INFINITE);
+	WaitForSingleObject(hMutex, INFINITE);
+	cout << "Thread " << ID << " done" << endl;
+	ReleaseMutex(hMutex);
+	SetEvent(hEventConfirm);
+
+	return 0;
+}
+
+UINT __cdecl newAfxThread(LPVOID lpParameter)
+{
+	int ID = (int)lpParameter;
+	WaitForSingleObject(hMutex, INFINITE);
+	cout << "Thread " << ID << " created" << endl;
+	ReleaseMutex(hMutex);
+	SetEvent(hEventConfirm);
+
 	WaitForSingleObject(hEvents[ID], INFINITE);
 	WaitForSingleObject(hMutex, INFINITE);
 	cout << "Thread " << ID << " done" << endl;
@@ -52,18 +71,20 @@ void start()
 	hEventStart = CreateEvent(NULL, TRUE, FALSE, "eventStart");
 	hEventConfirm = CreateEvent(NULL, TRUE, FALSE, "eventConfirm");
 	hEventQuit = CreateEvent(NULL, TRUE, FALSE, "eventQuit");
+	hEventMessageSent = CreateEvent(NULL, TRUE, FALSE, "eventMessageSent");
 
-	HANDLE hPossibleEvents[3] = {hEventStart, hEventStop, hEventQuit};
+	HANDLE hPossibleEvents[4] = {hEventStart, hEventStop, hEventQuit, hEventMessageSent};
 
 	int k = 0;
 	
 
 	while (true)
 	{
-		hSignal = WaitForMultipleObjects(3, hPossibleEvents, FALSE, INFINITE);
+		hSignal = WaitForMultipleObjects(4, hPossibleEvents, FALSE, INFINITE);
 		switch ((int)hSignal - (int)WAIT_OBJECT_0) {
 		case 0: {
-			hThreads.push_back(CreateThread(NULL, 0, newThread, (LPVOID)k, 0, NULL));
+			//hThreads.push_back(CreateThread(NULL, 0, newThread, (LPVOID)k, 0, NULL));
+			hThreads.push_back(AfxBeginThread(newAfxThread, (LPVOID)k, 0, 0, 0, 0));
 			hEvents.push_back(CreateEvent(NULL, FALSE, FALSE, NULL));
 			k++;
 			break;
@@ -79,6 +100,13 @@ void start()
 			SetEvent(hEventConfirm);
 			return;
 			break;
+		}
+		case 3: {
+			header messageHeader;
+			string message = readTextFromMMF(messageHeader);
+			cout << messageHeader.threadNum;
+			cout << message;
+			SetEvent(hEventConfirm);
 		}
 		}
 

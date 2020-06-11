@@ -68,6 +68,7 @@
             resources.ApplyResources(this.sendButton, "sendButton");
             this.sendButton.Name = "sendButton";
             this.sendButton.UseVisualStyleBackColor = true;
+            this.sendButton.Click += new System.EventHandler(this.sendButton_Click);
             // 
             // threadTextBox
             // 
