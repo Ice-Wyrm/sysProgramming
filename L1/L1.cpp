@@ -6,6 +6,8 @@
 #include "L1.h"
 #include <vector>
 #include "TransportDll/dllmain.h"
+#include <fstream>
+#include <string>
 
 using namespace std;
 
@@ -14,6 +16,8 @@ using namespace std;
 #endif
 
 CRITICAL_SECTION cs;
+
+string message;
 
 HANDLE hMutex;
 HANDLE hEventStop;
@@ -63,6 +67,27 @@ UINT __cdecl newAfxThread(LPVOID lpParameter)
 	return 0;
 }
 
+void messageToFile(string filename)
+{
+	ofstream fout(filename);
+	fout << message;
+	fout.close();
+}
+
+UINT __cdecl messageOutput(LPVOID threadNumFromMessage)
+{
+	int threadNum = (int)threadNumFromMessage;
+	if (threadNum == -1) {
+		cout << "Message arrived to main thread" << endl;
+		cout << message << endl;
+	} else {
+		cout << "Message arrived to " + to_string(threadNum) + " thread" << endl;
+		messageToFile("Thread" + to_string(threadNum) + ".txt");
+	}
+
+	return 0;
+}
+
 void start()
 {
 
@@ -103,10 +128,20 @@ void start()
 		}
 		case 3: {
 			header messageHeader;
-			string message = readTextFromMMF(messageHeader);
-			cout << messageHeader.threadNum;
-			cout << message;
-			SetEvent(hEventConfirm);
+			message = readTextFromMMF(messageHeader);
+
+			int threadNum = messageHeader.threadNum - 2;
+			
+			if (threadNum == -2) {
+				AfxBeginThread(messageOutput, (LPVOID)(-1), 0, 0, 0, 0);
+				for (int i = 0; i < hThreads.size(); i++) {
+					AfxBeginThread(messageOutput, (LPVOID)i, 0, 0, 0, 0);
+				}
+			}
+			else {
+				AfxBeginThread(messageOutput, (LPVOID)(threadNum), 0, 0, 0, 0);
+				SetEvent(hEventConfirm);
+			}
 		}
 		}
 
