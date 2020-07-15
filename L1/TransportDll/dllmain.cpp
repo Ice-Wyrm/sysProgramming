@@ -4,76 +4,97 @@
 #include <string>
 #include "dllmain.h"
 
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
-{
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
 
+HANDLE hRead, hWrite, hInfoRead, hInfoWrite;
+
+extern "C" _declspec(dllexport) void __stdcall Init()
+{
+	SECURITY_ATTRIBUTES sa = { sizeof(sa), NULL, TRUE };
+	CreatePipe(&hRead, &hWrite, &sa, 0);
+	SetHandleInformation(hWrite, HANDLE_FLAG_INHERIT, 0);
+
+	CreatePipe(&hInfoRead, &hInfoWrite, &sa, 0);
+	SetHandleInformation(hInfoWrite, HANDLE_FLAG_INHERIT, 0);
+
+	STARTUPINFO si = { 0 };
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESTDHANDLES;
+	si.hStdInput = hRead;
+	si.hStdError = hInfoRead;
+
+	PROCESS_INFORMATION pi;
+
+	CreateProcess(NULL, (LPSTR)"L1\\L1.exe", &sa, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi);
 }
 
-HANDLE hMutexDll;
-LPVOID fileView;
-
-void init() 
+void Cleanup()
 {
-	hMutexDll = CreateMutex(NULL, FALSE, "MyMutex");
+	CloseHandle(hRead);
+	CloseHandle(hWrite);
+	CloseHandle(hInfoRead);
+	CloseHandle(hInfoWrite);
 }
 
-void end()
+extern "C" _declspec(dllexport) void __stdcall SendText(char* pStr, int threadNum)
 {
-	CloseHandle(hMutexDll);
+	DWORD dwWrite;
+
+	header messageHeader;
+	messageHeader.size = strlen(pStr) + 1;
+	messageHeader.threadNum = threadNum;
+	WriteFile(hWrite, &messageHeader, sizeof(header), &dwWrite, nullptr);
+	WriteFile(hWrite, pStr, messageHeader.size, &dwWrite, nullptr);
 }
 
-extern "C" __declspec(dllexport) void _stdcall sendTextToMMF(char* message, int thread)
+extern "C" _declspec(dllexport) char* __stdcall GetText(header& messageHeader, HANDLE& hReadMessage)
 {
-	header fileInfo;
-	fileInfo.size = strlen(message) + 1;
-	fileInfo.threadNum = thread;
-
-	init();
-	WaitForSingleObject(hMutexDll, INFINITE);
-	HANDLE fileMapping = CreateFileMapping(NULL, NULL, PAGE_READWRITE, 0, sizeof(header) + fileInfo.size, "messageFile");
-	BYTE* pBuff = (BYTE*)MapViewOfFile(fileMapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(header) + fileInfo.size);
-
-	memcpy(pBuff, &fileInfo, sizeof(header));
-	memcpy(pBuff + sizeof(header), message, fileInfo.size);
-
-	ReleaseMutex(hMutexDll);
-	end();
-}
-
-extern "C" __declspec(dllexport) char* _stdcall readTextFromMMF(header& messageInfo)
-{
-	init();
-	WaitForSingleObject(hMutexDll, INFINITE);
-	HANDLE fileMapping = CreateFileMapping(NULL, NULL, PAGE_READWRITE, 0, sizeof(header), "messageFile");
-	BYTE* pBuff = (BYTE*)MapViewOfFile(fileMapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(header));
-
-	memcpy(&messageInfo, pBuff, sizeof(header));
-
-	UnmapViewOfFile(pBuff);
-	CloseHandle(fileMapping);
-
-	fileMapping = CreateFileMapping(NULL, NULL, PAGE_READWRITE, 0, sizeof(header) + messageInfo.size, "messageFile");
-	pBuff = (BYTE*)MapViewOfFile(fileMapping, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(header) + messageInfo.size);
-
-	char* message = new char[messageInfo.size];
-	memcpy(message, pBuff + sizeof(header), messageInfo.size);
-
-	UnmapViewOfFile(pBuff);
-	CloseHandle(fileMapping);
-	
-	ReleaseMutex(hMutexDll);
-	end();
+	DWORD dwRead;
+	ReadFile(hReadMessage, &messageHeader, sizeof(header), &dwRead, nullptr);
+	char* message = new char[messageHeader.size];
+	ReadFile(hReadMessage, message, messageHeader.size, &dwRead, nullptr);
 	return message;
+}
+
+
+extern "C" _declspec(dllexport) void __stdcall SendInfo(int actionId)
+{
+	//Коды:
+	//0: start
+	//1: stop
+	//2: send
+	//3: quit
+	DWORD dwWrite;
+	WriteFile(hInfoWrite, &actionId, sizeof(int), &dwWrite, nullptr);
+	FlushFileBuffers(hWrite);
+}
+
+
+extern "C" _declspec(dllexport) int __stdcall getAction(HANDLE& hInfo)
+{
+	const int MAXLEN = sizeof(int) + 1;
+	int action = 9;
+	DWORD dwRead;
+	ReadFile(hInfo, &action, MAXLEN, &dwRead, nullptr);
+
+	return action;
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule,
+	DWORD  ul_reason_for_call,
+	LPVOID lpReserved
+)
+{
+	switch (ul_reason_for_call)
+	{
+	case DLL_PROCESS_ATTACH:
+		break;
+	case DLL_THREAD_ATTACH:
+		break;
+	case DLL_THREAD_DETACH:
+		break;
+	case DLL_PROCESS_DETACH:
+		Cleanup();
+		break;
+	}
+	return TRUE;
 }

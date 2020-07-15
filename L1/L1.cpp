@@ -27,6 +27,10 @@ HANDLE hEventQuit;
 HANDLE hEventMessageSent;
 HANDLE mFile;
 
+
+HANDLE hInfo = GetStdHandle(STD_ERROR_HANDLE);
+HANDLE hRead = GetStdHandle(STD_INPUT_HANDLE);
+
 DWORD hSignal;
 
 
@@ -39,13 +43,11 @@ DWORD WINAPI newThread(LPVOID lpParameter)
 	WaitForSingleObject(hMutex, INFINITE);
 	cout << "Thread " << ID << " created" << endl;
 	ReleaseMutex(hMutex);
-	SetEvent(hEventConfirm);
 
 	WaitForSingleObject(hEvents[ID], INFINITE);
 	WaitForSingleObject(hMutex, INFINITE);
 	cout << "Thread " << ID << " done" << endl;
 	ReleaseMutex(hMutex);
-	SetEvent(hEventConfirm);
 
 	return 0;
 }
@@ -56,13 +58,11 @@ UINT __cdecl newAfxThread(LPVOID lpParameter)
 	WaitForSingleObject(hMutex, INFINITE);
 	cout << "Thread " << ID << " created" << endl;
 	ReleaseMutex(hMutex);
-	SetEvent(hEventConfirm);
 
 	WaitForSingleObject(hEvents[ID], INFINITE);
 	WaitForSingleObject(hMutex, INFINITE);
 	cout << "Thread " << ID << " done" << endl;
 	ReleaseMutex(hMutex);
-	SetEvent(hEventConfirm);
 
 	return 0;
 }
@@ -92,21 +92,12 @@ void start()
 {
 
 	hMutex = CreateMutex(NULL, FALSE, "MyMutex");
-	hEventStop = CreateEvent(NULL, TRUE, FALSE, "eventStop");
-	hEventStart = CreateEvent(NULL, TRUE, FALSE, "eventStart");
-	hEventConfirm = CreateEvent(NULL, TRUE, FALSE, "eventConfirm");
-	hEventQuit = CreateEvent(NULL, TRUE, FALSE, "eventQuit");
-	hEventMessageSent = CreateEvent(NULL, TRUE, FALSE, "eventMessageSent");
-
-	HANDLE hPossibleEvents[4] = {hEventStart, hEventStop, hEventQuit, hEventMessageSent};
-
 	int k = 0;
-	
 
 	while (true)
 	{
-		hSignal = WaitForMultipleObjects(4, hPossibleEvents, FALSE, INFINITE);
-		switch ((int)hSignal - (int)WAIT_OBJECT_0) {
+		int action = getAction(hInfo);
+		switch (action) {
 		case 0: {
 			//hThreads.push_back(CreateThread(NULL, 0, newThread, (LPVOID)k, 0, NULL));
 			hThreads.push_back(AfxBeginThread(newAfxThread, (LPVOID)k, 0, 0, 0, 0));
@@ -122,16 +113,11 @@ void start()
 			break;
 		}
 		case 2: {
-			SetEvent(hEventConfirm);
-			return;
-			break;
-		}
-		case 3: {
 			header messageHeader;
-			message = readTextFromMMF(messageHeader);
+			message = GetText(messageHeader, hRead);
 
+			//int threadNum = messageHeader.threadNum - 2;
 			int threadNum = messageHeader.threadNum - 2;
-			
 			if (threadNum == -2) {
 				AfxBeginThread(messageOutput, (LPVOID)(-1), 0, 0, 0, 0);
 				for (int i = 0; i < hThreads.size(); i++) {
@@ -142,16 +128,17 @@ void start()
 				AfxBeginThread(messageOutput, (LPVOID)(threadNum), 0, 0, 0, 0);
 				SetEvent(hEventConfirm);
 			}
+			break;
+		}
+		case 3: {
+			return;
+			break;
 		}
 		}
 
 	}
-	
-	
 
 	CloseHandle(hMutex);
-
-	cout << "all done" << endl;
 }
 
 // The one and only application object

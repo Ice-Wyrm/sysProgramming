@@ -15,7 +15,7 @@ namespace L1Sharp
 {
     public partial class Form1 : Form
     {
-        Process ChildProcess = null;
+        bool ChildProcessStarted = false;
         EventWaitHandle eventStop = new EventWaitHandle(false, EventResetMode.AutoReset, "eventStop");
         EventWaitHandle eventStart = new EventWaitHandle(false, EventResetMode.AutoReset, "eventStart");
         EventWaitHandle eventConfirm = new EventWaitHandle(false, EventResetMode.ManualReset, "eventConfirm");
@@ -23,7 +23,11 @@ namespace L1Sharp
         EventWaitHandle eventMessageSent = new EventWaitHandle(false, EventResetMode.AutoReset, "eventMessageSent");
 
         [DllImport("TransportDll.dll")]
-        private static extern void sendTextToMMF(string Str, int thread);
+        private static extern void SendText(string Str, int threadNum);
+        [DllImport("TransportDll.dll")]
+        private static extern void SendInfo(int actionId);
+        [DllImport("TransportDll.dll")]
+        private static extern void Init();
 
         int k;
 
@@ -34,9 +38,10 @@ namespace L1Sharp
 
         private void StartButton_Click(object sender, EventArgs e)
         {
-            if (ChildProcess == null || ChildProcess.HasExited)
+            if (!ChildProcessStarted)
             {
-                ChildProcess = Process.Start("L1\\L1.exe");
+                Init();
+                ChildProcessStarted = true;
                 ThreadList.Items.Clear();
                 ThreadList.Items.Add("All threads");
                 ThreadList.Items.Add("Main thread");
@@ -47,10 +52,8 @@ namespace L1Sharp
             {
                 for (var i = 0; i < threadCountField.Value; i++)
                 {
-                    eventStart.Set();
-                    eventConfirm.WaitOne();
+                    SendInfo(0);
                     ThreadList.Items.Add(String.Format("Thread {0}", k++));
-                    eventConfirm.Reset();
                 }
             }
 
@@ -58,37 +61,30 @@ namespace L1Sharp
 
         private void StopButton_Click(object sender, EventArgs e)
         {
-            if (ChildProcess == null || ChildProcess.HasExited)
+            if (!ChildProcessStarted)
             {
             }
             else
             {
                 if (k == 0)
                 {
-                    
-                    eventQuit.Set();
-                    eventConfirm.WaitOne();
+                    SendInfo(3);
+                    ChildProcessStarted = false;
                     ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
                     ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
                     threadCountField.Enabled = false;
                 }
                 if (ThreadList.Items.Count != 0) {
-                    eventStop.Set();
-                    eventConfirm.WaitOne();
+                    SendInfo(1);
                     ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
                     k--;
-                    eventConfirm.Reset();
                 }
             }
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
-            if (ChildProcess != null && !ChildProcess.HasExited)
-            {
-                ChildProcess.CloseMainWindow();
-                ChildProcess.Close();
-            }
+            SendInfo(3);
         }
 
         private void sendButton_Click(object sender, EventArgs e)
@@ -100,9 +96,8 @@ namespace L1Sharp
 
             string sb = threadTextBox.Text;
             int threadNum = ThreadList.SelectedIndex;
-            sendTextToMMF(sb, threadNum);
-            eventMessageSent.Set();
-            eventConfirm.WaitOne();
+            SendText(sb, threadNum);
+            SendInfo(2);
         }
              
     }
