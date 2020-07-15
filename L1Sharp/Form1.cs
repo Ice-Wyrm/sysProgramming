@@ -15,7 +15,6 @@ namespace L1Sharp
 {
     public partial class Form1 : Form
     {
-        bool ChildProcessStarted = false;
         EventWaitHandle eventStop = new EventWaitHandle(false, EventResetMode.AutoReset, "eventStop");
         EventWaitHandle eventStart = new EventWaitHandle(false, EventResetMode.AutoReset, "eventStart");
         EventWaitHandle eventConfirm = new EventWaitHandle(false, EventResetMode.ManualReset, "eventConfirm");
@@ -23,68 +22,73 @@ namespace L1Sharp
         EventWaitHandle eventMessageSent = new EventWaitHandle(false, EventResetMode.AutoReset, "eventMessageSent");
 
         [DllImport("TransportDll.dll")]
-        private static extern void SendText(string Str, int threadNum);
+        private static extern void SendText(string Str);
         [DllImport("TransportDll.dll")]
         private static extern void SendInfo(int actionId);
         [DllImport("TransportDll.dll")]
         private static extern void Init();
+
+        [DllImport("TransportDll.dll")]
+        private static extern void ConnectToServer();
+        [DllImport("TransportDll.dll")]
+        private static extern void Disconnect();
+        [DllImport("TransportDll.dll")]
+        private static extern int Response();
 
         int k;
 
         public Form1()
         {
             InitializeComponent();
+            ThreadList.Items.Clear();
+            ThreadList.Items.Add("All threads");
+            ThreadList.Items.Add("Main thread");
         }
 
         private void StartButton_Click(object sender, EventArgs e)
         {
-            if (!ChildProcessStarted)
+            for (var i = 0; i < threadCountField.Value; i++)
             {
-                Init();
-                ChildProcessStarted = true;
-                ThreadList.Items.Clear();
-                ThreadList.Items.Add("All threads");
-                ThreadList.Items.Add("Main thread");
-                threadCountField.Enabled = true;
-                k = 0;
+                ConnectToServer();
+                SendInfo(0);
+                int actualThreadNumber = Response() + 1;
+                Disconnect();
+                ThreadList.Items.Add(String.Format("Thread {0}", k++));
+                while (actualThreadNumber != ThreadList.Items.Count)
+                    this.CorrectThreadList(actualThreadNumber);
             }
-            else
-            {
-                for (var i = 0; i < threadCountField.Value; i++)
-                {
-                    SendInfo(0);
-                    ThreadList.Items.Add(String.Format("Thread {0}", k++));
-                }
-            }
-
         }
 
         private void StopButton_Click(object sender, EventArgs e)
         {
-            if (!ChildProcessStarted)
-            {
+            if (ThreadList.Items.Count > 2) {
+                ConnectToServer();
+                SendInfo(1);
+                int actualThreadNumber = Response() + 1;
+                Disconnect();
+                ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
+                while (actualThreadNumber != ThreadList.Items.Count)
+                    this.CorrectThreadList(actualThreadNumber);
+                k--;
             }
-            else
+        }
+
+        private void CorrectThreadList(int actualThreadNumber)
+        {
+            if (ThreadList.Items.Count < actualThreadNumber)
             {
-                if (k == 0)
-                {
-                    SendInfo(3);
-                    ChildProcessStarted = false;
-                    ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
-                    ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
-                    threadCountField.Enabled = false;
-                }
-                if (ThreadList.Items.Count != 0) {
-                    SendInfo(1);
-                    ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
-                    k--;
-                }
+                ThreadList.Items.Add(String.Format("Thread {0}", k++));
+            }
+
+            if (ThreadList.Items.Count > actualThreadNumber)
+            {
+                ThreadList.Items.RemoveAt(ThreadList.Items.Count - 1);
             }
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
-            SendInfo(3);
+
         }
 
         private void sendButton_Click(object sender, EventArgs e)
@@ -96,8 +100,15 @@ namespace L1Sharp
 
             string sb = threadTextBox.Text;
             int threadNum = ThreadList.SelectedIndex;
-            SendText(sb, threadNum);
+
+            ConnectToServer();
             SendInfo(2);
+            SendText(sb);
+            int actualThreadNumber = Response() + 1;
+            Disconnect();
+
+            while (actualThreadNumber != ThreadList.Items.Count)
+                this.CorrectThreadList(actualThreadNumber);
         }
              
     }

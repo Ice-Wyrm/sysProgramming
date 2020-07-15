@@ -8,6 +8,7 @@
 #include "TransportDll/dllmain.h"
 #include <fstream>
 #include <string>
+#include <thread>
 
 using namespace std;
 
@@ -20,19 +21,9 @@ CRITICAL_SECTION cs;
 string message;
 
 HANDLE hMutex;
-HANDLE hEventStop;
-HANDLE hEventStart;
-HANDLE hEventConfirm;
-HANDLE hEventQuit;
-HANDLE hEventMessageSent;
 HANDLE mFile;
 
-
-HANDLE hInfo = GetStdHandle(STD_ERROR_HANDLE);
-HANDLE hRead = GetStdHandle(STD_INPUT_HANDLE);
-
 DWORD hSignal;
-
 
 vector<HANDLE> hEvents;
 vector<HANDLE> hThreads;
@@ -92,32 +83,34 @@ void start()
 {
 
 	hMutex = CreateMutex(NULL, FALSE, "MyMutex");
+	
 	int k = 0;
 
 	while (true)
 	{
-		int action = getAction(hInfo);
+		WorkWithClients();
+		int action = getAction();
 		switch (action) {
 		case 0: {
 			//hThreads.push_back(CreateThread(NULL, 0, newThread, (LPVOID)k, 0, NULL));
 			hThreads.push_back(AfxBeginThread(newAfxThread, (LPVOID)k, 0, 0, 0, 0));
 			hEvents.push_back(CreateEvent(NULL, FALSE, FALSE, NULL));
 			k++;
+			SendInfo(k);
 			break;
 		}
 		case 1: {
 			SetEvent(hEvents[hEvents.size() - 1]);
 			hEvents.pop_back();
 			k--;
-
+			SendInfo(k);
 			break;
 		}
 		case 2: {
-			header messageHeader;
-			message = GetText(messageHeader, hRead);
+			message = GetText();
 
 			//int threadNum = messageHeader.threadNum - 2;
-			int threadNum = messageHeader.threadNum - 2;
+			int threadNum = -1;
 			if (threadNum == -2) {
 				AfxBeginThread(messageOutput, (LPVOID)(-1), 0, 0, 0, 0);
 				for (int i = 0; i < hThreads.size(); i++) {
@@ -126,12 +119,9 @@ void start()
 			}
 			else {
 				AfxBeginThread(messageOutput, (LPVOID)(threadNum), 0, 0, 0, 0);
-				SetEvent(hEventConfirm);
 			}
-			break;
-		}
-		case 3: {
-			return;
+
+			SendInfo(k);
 			break;
 		}
 		}
