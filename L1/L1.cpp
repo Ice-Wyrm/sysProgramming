@@ -138,6 +138,8 @@ void start()
 
 	}
 
+	CloseHandle(hRead);
+	CloseHandle(hInfo);
 	CloseHandle(hMutex);
 }
 

@@ -65,7 +65,6 @@ extern "C" _declspec(dllexport) void __stdcall SendInfo(int actionId)
 	//3: quit
 	DWORD dwWrite;
 	WriteFile(hInfoWrite, &actionId, sizeof(int), &dwWrite, nullptr);
-	FlushFileBuffers(hWrite);
 }
 
 
