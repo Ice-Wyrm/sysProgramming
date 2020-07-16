@@ -5,7 +5,7 @@
 #include "framework.h"
 #include "L1.h"
 #include <vector>
-#include "TransportDll/dllmain.h"
+#include "TransportDllMFC/TransportDllMFC.h"
 #include <fstream>
 #include <string>
 #include <thread>
@@ -81,11 +81,11 @@ UINT __cdecl messageOutput(LPVOID threadNumFromMessage)
 
 void start()
 {
-
 	hMutex = CreateMutex(NULL, FALSE, "MyMutex");
 	
 	int k = 0;
-
+	Init();
+	
 	while (true)
 	{
 		WorkWithClients();
@@ -105,7 +105,7 @@ void start()
 			k--;
 			SendInfo(k);
 			break;
-		}
+		} 
 		case 2: {
 			message = GetText();
 

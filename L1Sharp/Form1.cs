@@ -21,18 +21,16 @@ namespace L1Sharp
         EventWaitHandle eventQuit = new EventWaitHandle(false, EventResetMode.AutoReset, "eventQuit");
         EventWaitHandle eventMessageSent = new EventWaitHandle(false, EventResetMode.AutoReset, "eventMessageSent");
 
-        [DllImport("TransportDll.dll")]
+        [DllImport("TransportDllMFC.dll")]
         private static extern void SendText(string Str);
-        [DllImport("TransportDll.dll")]
+        [DllImport("TransportDllMFC.dll")]
         private static extern void SendInfo(int actionId);
-        [DllImport("TransportDll.dll")]
-        private static extern void Init();
 
-        [DllImport("TransportDll.dll")]
-        private static extern void ConnectToServer();
-        [DllImport("TransportDll.dll")]
+        [DllImport("TransportDllMFC.dll")]
+        private static extern bool ConnectToServer();
+        [DllImport("TransportDllMFC.dll")]
         private static extern void Disconnect();
-        [DllImport("TransportDll.dll")]
+        [DllImport("TransportDllMFC.dll")]
         private static extern int Response();
 
         int k;
@@ -49,7 +47,7 @@ namespace L1Sharp
         {
             for (var i = 0; i < threadCountField.Value; i++)
             {
-                ConnectToServer();
+                bool Connection = ConnectToServer();
                 SendInfo(0);
                 int actualThreadNumber = Response() + 1;
                 Disconnect();
